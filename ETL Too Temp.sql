@@ -668,4 +668,5 @@ and data8.Visit_SupId like '%' -- in (@Sup)
 )data9
 where 1=1 
 )data10
-where data10.sm_name not in (N'บุญสม  เกษจันทร์ทิวา')
+where data10.sm_name not in (N'บุญสม  เกษจันทร์ทิวา') 
+-----********xxxxx*******----------
