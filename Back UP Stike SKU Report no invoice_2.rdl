@@ -1,0 +1,2567 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2008/01/reportdefinition">
+  <DataSources>
+    <DataSource Name="DataSource1">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=BC-CRM;Initial Catalog=Biopharm_MSCRM</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+      <rd:DataSourceID>01f90baf-0bdc-40fc-a457-650c52fc6460</rd:DataSourceID>
+      <rd:SecurityType>Windows</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="SM">
+      <Fields>
+        <Field Name="new_smcode">
+          <DataField>new_smcode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="sm_id">
+          <DataField>sm_id</DataField>
+          <rd:TypeName>System.Guid</rd:TypeName>
+        </Field>
+        <Field Name="sm_name">
+          <DataField>sm_name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>--==============================( SM )======================--
+
+/*select distinct		
+		emp.new_smid as sm_id
+		,emp.new_sm_name as sm_name
+		
+from	Filterednew_allchannelsalesamount  sa,
+		FilteredNew_employee_data emp,
+		FilteredNew_salesterritory ster
+where	emp.new_sup_number = sa.new_sup_number
+and     emp.new_salesrepid = ster.new_userid
+and     ster.new_enddate is null
+and		ster.new_territoryidname not like 'OLD%'
+and sa.new_year = YEAR(GETDATE()) 
+--and sa.new_month in (@Month)
+order by 2*/
+
+select new_smcode, us.SystemUserId as sm_id, us.fullname as sm_name from
+(
+                select distinct New_smcode from FilteredNew_mapping_territory
+		where substring(new_territory,3,1) = '9'
+
+) mp
+inner join FilteredSystemUser us on mp.new_smcode = Replace(us.DomainName, 'BIOPHARM\','')</CommandText>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="Sup">
+      <Fields>
+        <Field Name="supid">
+          <DataField>supid</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="supname">
+          <DataField>supname</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="sm_id">
+          <DataField>sm_id</DataField>
+          <rd:TypeName>System.Guid</rd:TypeName>
+        </Field>
+        <Field Name="sm_name">
+          <DataField>sm_name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>select distinct		sa.new_sup_number  as supid
+			,sa.new_sup_name  as supname
+		,emp.new_smid as sm_id
+		,emp.new_sm_name as sm_name
+		
+from	Filterednew_allchannelsalesamount  sa,
+		FilteredNew_employee_data emp,
+		FilteredNew_salesterritory ster
+where	emp.new_sup_number = sa.new_sup_number
+and     emp.new_salesrepid = ster.new_userid
+and     ster.new_enddate is null
+and		ster.new_territoryidname not like 'OLD%'
+and sa.new_year = year(getdate())
+and emp.new_smid in (@SM)
+union 
+select 'SAL02001' as supcode ,
+name as supname ,
+'E6993FAD-E71C-E311-A54A-BC305BE19597' as sm_id,
+N'บุญเลิศ  ธีระนนทมงคล' as sm_name
+
+from TMP_EmployeeExt 
+where Emptype = 'DSM'
+
+order by 2</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@SM">
+            <Value>=Parameters!SM.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="employee">
+      <Fields>
+        <Field Name="TerritoryName">
+          <DataField>TerritoryName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Territory">
+          <DataField>Territory</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Y">
+          <DataField>Y</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_supcode">
+          <DataField>new_supcode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ownerid">
+          <DataField>ownerid</DataField>
+          <rd:TypeName>System.Guid</rd:TypeName>
+        </Field>
+        <Field Name="owneridname">
+          <DataField>owneridname</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>select TerritoryName,Territory,Y,new_supcode 
+,ownerid,owneridname
+
+from
+(
+select distinct new_territory as  TerritoryName, 
+new_territory as Territory,
+CONVERT(VARCHAR(113),YEAR(createdon)) as Y,
+new_supcode,ownerid,owneridname
+from  FilteredNew_Mapping_Territory
+where substring(new_territory,3,1) ='9'
+) X where X.Y = year(getdate())
+and new_supcode in(@Sup)</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@Sup">
+            <Value>=Parameters!Sup.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+    <DataSet Name="DataSet2">
+      <Fields>
+        <Field Name="code">
+          <DataField>code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="date">
+          <DataField>date</DataField>
+          <rd:TypeName>System.DateTime</rd:TypeName>
+        </Field>
+        <Field Name="ownerid">
+          <DataField>ownerid</DataField>
+          <rd:TypeName>System.Guid</rd:TypeName>
+        </Field>
+        <Field Name="owneridname">
+          <DataField>owneridname</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Accompany1">
+          <DataField>Accompany1</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Accompany2">
+          <DataField>Accompany2</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Accompany3">
+          <DataField>Accompany3</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Period">
+          <DataField>Period</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Territory">
+          <DataField>Territory</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="DSM_E">
+          <DataField>DSM_E</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_location">
+          <DataField>new_location</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="accountnumber">
+          <DataField>accountnumber</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_accountidname">
+          <DataField>new_accountidname</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="address1_stateorprovince">
+          <DataField>address1_stateorprovince</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_e_plan_amount1">
+          <DataField>new_e_plan_amount1</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
+        </Field>
+        <Field Name="Times">
+          <DataField>Times</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_itemcode">
+          <DataField>new_itemcode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_e_item1_idname">
+          <DataField>new_e_item1_idname</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="new_productbrand">
+          <DataField>new_productbrand</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="New_TotalExcludeVAT">
+          <DataField>New_TotalExcludeVAT</DataField>
+          <rd:TypeName>System.Double</rd:TypeName>
+        </Field>
+        <Field Name="Stiker_Hit">
+          <DataField>Stiker_Hit</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+      </Fields>
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>select 
+P.code 
+,P.date
+,P.ownerid,P.owneridname,P.Accompany1,P.Accompany2,P.Accompany3,P.Period
+,P.Territory,P.DSM_E,P.new_location
+,P.accountnumber,P.new_accountidname
+,P.address1_stateorprovince,P.new_e_plan_amount1
+,P.Times,P.new_itemcode,P.new_e_item1_idname
+,P.new_productbrand,P.New_TotalExcludeVAT
+,case when P.New_TotalExcludeVAT  IS NULL then 0 
+		  when P.New_TotalExcludeVAT &lt; = 0 then 0 
+		  else 1 end Stiker_Hit 
+
+from
+(
+select 
+P50_1.code 
+,P50_1.date
+,P50_1.ownerid,P50_1.owneridname,P50_1.Accompany1,P50_1.Accompany2,P50_1.Accompany3,P50_1.new_time as Period
+,P50_1.Territory,P50_1.DSM_E,P50_1.new_location
+,P50_1.accountnumber,P50_1.new_accountidname
+,P50_1.address1_stateorprovince,P50_1.new_e_plan_amount1
+,P50_1.Times,P50_1.new_itemcode,P50_1.new_e_item1_idname
+,P50_1.new_productbrand,TMP_TCA.New_TotalExcludeVAT
+
+from
+(
+select 
+Plan50_1.accountnumber+ Plan50_1.new_itemcode as code 
+,CONVERT(datetime,Plan50_1.new_date,105) as date
+,Plan50_1.ownerid,Plan50_1.owneridname,Plan50_1.Territory,Plan50_1.DSM_E,Plan50_1.new_location
+,Plan50_1.accountnumber,Plan50_1.new_accountidname,Plan50_1.Accompany1,Plan50_1.Accompany2,Plan50_1.Accompany3,Plan50_1.new_time
+,Plan50_1.address1_stateorprovince,Plan50_1.new_e_plan_amount1
+,Plan50_1.Times,Plan50_1.new_itemcode,Plan50_1.new_e_item1_idname
+,Plan50_1.new_productbrand
+from
+(
+select all_data.*,emp.sup_name,emp.DSM_E,emp.new_location
+from
+(
+--*****************************************Existing SKU #1*******************************
+select
+sku1.New_itinerary_result_otcid,sku1.New_itineraryresultid
+,sku1.new_date
+,sku1.ownerid
+,sku1.owneridname
+,sku1.Territory
+,sku1.Team
+,sku1.Accompany1
+,sku1.Accompany2
+,sku1.Accompany3
+,sku1.new_seqnum
+,sku1.new_accountid,acc.accountnumber
+,sku1.new_accountidname,acc.address1_stateorprovince
+,sku1.new_address,sku1.new_time
+,sku1.new_e_plan_amount1,----ราคา
+sku1.new_e_item1_id, ----item
+sku1.new_e_item1_idname,---name
+sku1.new_e_key1_idname --message
+,sku1.Times,sku1.new_itemcode,sku1.New_productbrand
+
+from
+(
+select
+data.New_itinerary_result_otcid,data.New_itineraryresultid
+,data.new_date
+,data.ownerid
+,data.owneridname
+,data.Territory
+,data.Team
+,data.Accompany1
+,data.Accompany2
+,data.Accompany3
+,data.new_seqnum
+,data.new_accountid
+,data.new_accountidname,data.new_address,data.new_time
+,data.new_e_plan_amount1,----ราคา
+data.new_e_item1_id, ----item
+data.new_e_item1_idname,---name
+data.new_e_key1_idname --message
+,data.Times,item.new_itemcode,item.New_productbrand
+from
+(
+select
+ir.New_itinerary_result_otcid,iri.New_itineraryresultid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName as Territory
+,users.new_Tmp_teamName as Team
+,ir.new_plan_all_ref1idname as Accompany1
+,ir.new_plan_all_ref2idname as Accompany2
+,ir.new_plan_all_ref3idname as Accompany3
+,iri.new_seqnum
+,iri.new_accountid
+,iri.new_accountidname,iri.new_address,iri.new_time
+,iri.new_e_plan_amount1,----ราคา
+iri.new_e_item1_id, ----item
+iri.new_e_item1_idname,---name
+iri.new_e_key1_idname --message
+,'Existing SKU #1' as  Times
+from filteredNew_itinerary_result_otc ir
+inner join filteredNew_itinerary_result_otc_i iri
+on ir.new_itinerary_result_otcid =iri.new_itineraryresultid
+inner join FilteredSystemUser users
+on ir.ownerid = users.SystemUserId
+where 1=1
+and ir.statecode =0
+and ir.statuscode = 1
+
+and iri.statecode =0
+and iri.statuscode = 1
+and iri.new_plan_or_visit = 0
+
+--and ir.ownerid in  ('16B74EBD-F91C-E311-A54A-BC305BE19597')/*User On system*/
+--and year(ir.new_date) =  year(getdate())/*Curent Year*/
+--and month(ir.new_date) in ('06')--(@Month)/*Month*/
+----and day(ir.new_date) in ('07')/*Date*/
+
+and ir.ownerid in  (@employee)/*User On system*/
+and year(ir.new_date) =  year(getdate())/*Curent Year*/
+and month(ir.new_date) in (@Month)/*Month*/
+--and day(ir.new_date) in ('07')/*Date*/
+
+group by
+ir.New_itinerary_result_otcid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName
+,users.new_Tmp_teamName
+,ir.new_plan_all_ref1idname
+,ir.new_plan_all_ref2idname
+,ir.new_plan_all_ref3idname
+,iri.New_itineraryresultid
+,iri.New_itineraryresultid,iri.new_seqnum,iri.new_accountidname,iri.new_address,new_time,iri.new_accountid
+,iri.new_e_plan_amount1,iri.new_e_item1_id,iri.new_e_item1_idname,iri.new_e_key1_idname----EXISTING  SKU#1
+)data
+INNER JOIN
+(
+select  new_itemid,new_itemcode,New_productbrand from filteredNew_item
+)item on data.new_e_item1_id = item.new_itemid
+)sku1
+inner join (select accountid, accountnumber,name,address1_stateorprovince from FilteredAccount) acc
+on sku1.new_accountid = acc.accountid
+--*****************************************Existing SKU #1*******************************
+UNION
+--*****************************************Existing SKU #2*******************************
+select
+sku1.New_itinerary_result_otcid,sku1.New_itineraryresultid
+,sku1.new_date
+,sku1.ownerid
+,sku1.owneridname
+,sku1.Territory
+,sku1.Team
+,sku1.Accompany1
+,sku1.Accompany2
+,sku1.Accompany3
+,sku1.new_seqnum
+,sku1.new_accountid,acc.accountnumber
+,sku1.new_accountidname,acc.address1_stateorprovince
+,sku1.new_address,sku1.new_time
+,sku1.new_e_plan_amount2,----ราคา
+sku1.new_e_item2_id, ----item
+sku1.new_e_item2_idname,---name
+sku1.new_e_key2_idname --message
+,sku1.Times,sku1.new_itemcode,sku1.New_productbrand
+
+from
+(
+select
+data.New_itinerary_result_otcid,data.New_itineraryresultid
+,data.new_date
+,data.ownerid
+,data.owneridname
+,data.Territory
+,data.Team
+,data.Accompany1
+,data.Accompany2
+,data.Accompany3
+,data.new_seqnum
+,data.new_accountid
+,data.new_accountidname,data.new_address,data.new_time
+,data.new_e_plan_amount2,----ราคา
+data.new_e_item2_id, ----item
+data.new_e_item2_idname,---name
+data.new_e_key2_idname --message
+,data.Times,item.new_itemcode,item.New_productbrand
+from
+(
+select
+ir.New_itinerary_result_otcid,iri.New_itineraryresultid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName as Territory
+,users.new_Tmp_teamName as Team
+,ir.new_plan_all_ref1idname as Accompany1
+,ir.new_plan_all_ref2idname as Accompany2
+,ir.new_plan_all_ref3idname as Accompany3
+,iri.new_seqnum
+,iri.new_accountid
+,iri.new_accountidname,iri.new_address,iri.new_time
+,iri.new_e_plan_amount2,----ราคา
+iri.new_e_item2_id, ----item
+iri.new_e_item2_idname,---name
+iri.new_e_key2_idname --message
+,'Existing SKU #2' as  Times
+from filteredNew_itinerary_result_otc ir
+inner join filteredNew_itinerary_result_otc_i iri
+on ir.new_itinerary_result_otcid =iri.new_itineraryresultid
+inner join FilteredSystemUser users
+on ir.ownerid = users.SystemUserId
+where 1=1
+and ir.statecode =0
+and ir.statuscode = 1
+
+
+and iri.statecode =0
+and iri.statuscode = 1
+and iri.new_plan_or_visit = 0
+--and ir.ownerid in  ('16B74EBD-F91C-E311-A54A-BC305BE19597')/*User On system*/
+--and year(ir.new_date) =  year(getdate())/*Curent Year*/
+--and month(ir.new_date) in ('06')--(@Month)/*Month*/
+----and day(ir.new_date) in ('07')/*Date*/
+
+and ir.ownerid in  (@employee)/*User On system*/
+and year(ir.new_date) =  year(getdate())/*Curent Year*/
+and month(ir.new_date) in (@Month)/*Month*/
+--and day(ir.new_date) in ('07')/*Date*/
+
+group by
+ir.New_itinerary_result_otcid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName
+,users.new_Tmp_teamName
+,ir.new_plan_all_ref1idname
+,ir.new_plan_all_ref2idname
+,ir.new_plan_all_ref3idname
+,iri.New_itineraryresultid
+,iri.New_itineraryresultid,iri.new_seqnum,iri.new_accountidname,iri.new_address,new_time,iri.new_accountid
+,iri.new_e_plan_amount2,iri.new_e_item2_id,iri.new_e_item2_idname,iri.new_e_key2_idname----EXISTING  SKU#1
+)data
+INNER JOIN
+(
+select  new_itemid,new_itemcode,New_productbrand from filteredNew_item
+)item on data.new_e_item2_id = item.new_itemid
+)sku1
+inner join (select accountid, accountnumber,name,address1_stateorprovince from FilteredAccount) acc
+on sku1.new_accountid = acc.accountid
+
+--*****************************************Existing SKU #2*******************************
+UNION
+--*****************************************Existing SKU #3*******************************
+select
+sku1.New_itinerary_result_otcid,sku1.New_itineraryresultid
+,sku1.new_date
+,sku1.ownerid
+,sku1.owneridname
+,sku1.Territory
+,sku1.Team
+,sku1.Accompany1
+,sku1.Accompany2
+,sku1.Accompany3
+,sku1.new_seqnum
+,sku1.new_accountid,acc.accountnumber
+,sku1.new_accountidname,acc.address1_stateorprovince
+,sku1.new_address,sku1.new_time
+,sku1.new_e_plan_amount3,----ราคา
+sku1.new_e_item3_id, ----item
+sku1.new_e_item3_idname,---name
+sku1.new_e_key3_idname --message
+,sku1.Times,sku1.new_itemcode,sku1.New_productbrand
+
+from
+(
+select
+data.New_itinerary_result_otcid,data.New_itineraryresultid
+,data.new_date
+,data.ownerid
+,data.owneridname
+,data.Territory
+,data.Team
+,data.Accompany1
+,data.Accompany2
+,data.Accompany3
+,data.new_seqnum
+,data.new_accountid
+,data.new_accountidname,data.new_address,data.new_time
+,data.new_e_plan_amount3,----ราคา
+data.new_e_item3_id, ----item
+data.new_e_item3_idname,---name
+data.new_e_key3_idname --message
+,data.Times,item.new_itemcode,item.New_productbrand
+from
+(
+select
+ir.New_itinerary_result_otcid,iri.New_itineraryresultid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName as Territory
+,users.new_Tmp_teamName as Team
+,ir.new_plan_all_ref1idname as Accompany1
+,ir.new_plan_all_ref2idname as Accompany2
+,ir.new_plan_all_ref3idname as Accompany3
+,iri.new_seqnum
+,iri.new_accountid
+,iri.new_accountidname,iri.new_address,iri.new_time
+,iri.new_e_plan_amount3,----ราคา
+iri.new_e_item3_id, ----item
+iri.new_e_item3_idname,---name
+iri.new_e_key3_idname --message
+,'Existing SKU #3' as  Times
+from filteredNew_itinerary_result_otc ir
+inner join filteredNew_itinerary_result_otc_i iri
+on ir.new_itinerary_result_otcid =iri.new_itineraryresultid
+inner join FilteredSystemUser users
+on ir.ownerid = users.SystemUserId
+where 1=1
+and ir.statecode =0
+and ir.statuscode = 1
+
+
+and iri.statecode =0
+and iri.statuscode = 1
+and iri.new_plan_or_visit = 0
+
+--and ir.ownerid in  ('16B74EBD-F91C-E311-A54A-BC305BE19597')/*User On system*/
+--and year(ir.new_date) =  year(getdate())/*Curent Year*/
+--and month(ir.new_date) in ('06')--(@Month)/*Month*/
+----and day(ir.new_date) in ('07')/*Date*/
+
+and ir.ownerid in  (@employee)/*User On system*/
+and year(ir.new_date) =  year(getdate())/*Curent Year*/
+and month(ir.new_date) in (@Month)/*Month*/
+--and day(ir.new_date) in ('07')/*Date*/
+
+group by
+ir.New_itinerary_result_otcid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName
+,users.new_Tmp_teamName
+,ir.new_plan_all_ref1idname
+,ir.new_plan_all_ref2idname
+,ir.new_plan_all_ref3idname
+,iri.New_itineraryresultid
+,iri.New_itineraryresultid,iri.new_seqnum,iri.new_accountidname,iri.new_address,new_time,iri.new_accountid
+,iri.new_e_plan_amount3,iri.new_e_item3_id,iri.new_e_item3_idname,iri.new_e_key3_idname----EXISTING  SKU#1
+)data
+INNER JOIN
+(
+select  new_itemid,new_itemcode,New_productbrand from filteredNew_item
+)item on data.new_e_item3_id = item.new_itemid
+)sku1
+inner join (select accountid, accountnumber,name,address1_stateorprovince from FilteredAccount) acc
+on sku1.new_accountid = acc.accountid
+
+--*****************************************Existing SKU #3*******************************
+
+UNION
+--*****************************************New SKU #1*******************************
+select
+sku1.New_itinerary_result_otcid,sku1.New_itineraryresultid
+,sku1.new_date
+,sku1.ownerid
+,sku1.owneridname
+,sku1.Territory
+,sku1.Team
+,sku1.Accompany1
+,sku1.Accompany2
+,sku1.Accompany3
+,sku1.new_seqnum
+,sku1.new_accountid,acc.accountnumber
+,sku1.new_accountidname,acc.address1_stateorprovince
+,sku1.new_address,sku1.new_time
+,sku1.new_n_plan_amount1,----ราคา
+sku1.new_n_item1_id, ----item
+sku1.new_n_brand1_idname,---name
+sku1.new_n_item1_idname --message
+,sku1.Times,sku1.new_itemcode,sku1.New_productbrand
+from
+(
+select
+data2.New_itinerary_result_otcid,data2.New_itineraryresultid
+,data2.new_date
+,data2.ownerid
+,data2.owneridname
+,data2.Territory
+,data2.Team
+,data2.Accompany1
+,data2.Accompany2
+,data2.Accompany3
+,data2.new_seqnum
+,data2.new_accountid
+,data2.new_accountidname,data2.new_address,data2.new_time
+,data2.new_n_plan_amount1,----ราคา
+data2.new_n_item1_id, ----item
+data2.new_n_brand1_idname,---name
+data2.new_n_item1_idname --message
+,data2.Times,item.new_itemcode,item.New_productbrand
+from
+(
+select
+ir.New_itinerary_result_otcid,iri.New_itineraryresultid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName as Territory
+,users.new_Tmp_teamName as Team
+,ir.new_plan_all_ref1idname as Accompany1
+,ir.new_plan_all_ref2idname as Accompany2
+,ir.new_plan_all_ref3idname as Accompany3
+,iri.new_seqnum
+,iri.new_accountid
+,iri.new_accountidname,iri.new_address,iri.new_time
+,iri.new_n_plan_amount1,----ราคา
+iri.new_n_item1_id, ----item
+iri.new_n_brand1_idname,---name
+iri.new_n_item1_idname --message
+,'New SKU #1' as  Times
+----EXISTING  SKU#2
+from filteredNew_itinerary_result_otc ir
+inner join filteredNew_itinerary_result_otc_i iri
+on ir.new_itinerary_result_otcid =iri.new_itineraryresultid
+inner join FilteredSystemUser users
+on ir.ownerid = users.SystemUserId
+where 1=1
+and ir.statecode =0
+and ir.statuscode = 1
+
+
+and iri.statecode =0
+and iri.statuscode = 1
+and iri.new_plan_or_visit = 0
+
+--and ir.ownerid in  ('16B74EBD-F91C-E311-A54A-BC305BE19597')/*User On system*/
+--and year(ir.new_date) =  year(getdate())/*Curent Year*/
+--and month(ir.new_date) in ('06')--(@Month)/*Month*/
+----and day(ir.new_date) in ('07')/*Date*/
+and ir.ownerid in  (@employee)/*User On system*/
+and year(ir.new_date) =  year(getdate())/*Curent Year*/
+and month(ir.new_date) in (@Month)/*Month*/
+--and day(ir.new_date) in ('07')/*Date*/
+
+group by
+ir.New_itinerary_result_otcid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName
+,users.new_Tmp_teamName
+,ir.new_plan_all_ref1idname
+,ir.new_plan_all_ref2idname
+,ir.new_plan_all_ref3idname
+,iri.New_itineraryresultid
+,iri.New_itineraryresultid,iri.new_seqnum,iri.new_accountidname,iri.new_address,new_time,iri.new_accountid
+,iri.new_n_plan_amount1,----ราคา
+iri.new_n_item1_id, ----item
+iri.new_n_brand1_idname,---name
+iri.new_n_item1_idname --message
+)data2
+INNER JOIN
+(
+select  new_itemid,new_itemcode,New_productbrand from filteredNew_item
+)item on data2.new_n_item1_id = item.new_itemid
+)sku1
+inner join (select accountid, accountnumber,name,address1_stateorprovince from FilteredAccount) acc
+on sku1.new_accountid = acc.accountid
+
+--*****************************************New SKU #1*******************************
+UNION
+--*****************************************New SKU #2*******************************
+select
+sku1.New_itinerary_result_otcid,sku1.New_itineraryresultid
+,sku1.new_date
+,sku1.ownerid
+,sku1.owneridname
+,sku1.Territory
+,sku1.Team
+,sku1.Accompany1
+,sku1.Accompany2
+,sku1.Accompany3
+,sku1.new_seqnum
+,sku1.new_accountid,acc.accountnumber
+,sku1.new_accountidname,acc.address1_stateorprovince
+,sku1.new_address,sku1.new_time
+,sku1.new_n_plan_amount2,----ราคา
+sku1.new_n_item2_id, ----item
+sku1.new_n_brand2_idname,---name
+sku1.new_n_item2_idname --message
+,sku1.Times,sku1.new_itemcode,sku1.New_productbrand
+from
+(
+select
+data2.New_itinerary_result_otcid,data2.New_itineraryresultid
+,data2.new_date
+,data2.ownerid
+,data2.owneridname
+,data2.Territory
+,data2.Team
+,data2.Accompany1
+,data2.Accompany2
+,data2.Accompany3
+,data2.new_seqnum
+,data2.new_accountid
+,data2.new_accountidname,data2.new_address,data2.new_time
+,data2.new_n_plan_amount2,----ราคา
+data2.new_n_item2_id, ----item
+data2.new_n_brand2_idname,---name
+data2.new_n_item2_idname --message
+,data2.Times,item.new_itemcode,item.New_productbrand
+from
+(
+select
+ir.New_itinerary_result_otcid,iri.New_itineraryresultid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName as Territory
+,users.new_Tmp_teamName as Team
+,ir.new_plan_all_ref1idname as Accompany1
+,ir.new_plan_all_ref2idname as Accompany2
+,ir.new_plan_all_ref3idname as Accompany3
+,iri.new_seqnum
+,iri.new_accountid
+,iri.new_accountidname,iri.new_address,iri.new_time
+,iri.new_n_plan_amount2,----ราคา
+iri.new_n_item2_id, ----item
+iri.new_n_brand2_idname,---name
+iri.new_n_item2_idname --message
+,'New SKU #2' as  Times
+----EXISTING  SKU#2
+from filteredNew_itinerary_result_otc ir
+inner join filteredNew_itinerary_result_otc_i iri
+on ir.new_itinerary_result_otcid =iri.new_itineraryresultid
+inner join FilteredSystemUser users
+on ir.ownerid = users.SystemUserId
+where 1=1
+and ir.statecode =0
+and ir.statuscode = 1
+
+and iri.statecode =0
+and iri.statuscode = 1
+and iri.new_plan_or_visit = 0
+
+--and ir.ownerid in  ('16B74EBD-F91C-E311-A54A-BC305BE19597')/*User On system*/
+--and year(ir.new_date) =  year(getdate())/*Curent Year*/
+--and month(ir.new_date) in ('06')--(@Month)/*Month*/
+----and day(ir.new_date) in ('07')/*Date*/
+
+and ir.ownerid in  (@employee)/*User On system*/
+and year(ir.new_date) =  year(getdate())/*Curent Year*/
+and month(ir.new_date) in (@Month)/*Month*/
+--and day(ir.new_date) in ('07')/*Date*/
+group by
+ir.New_itinerary_result_otcid
+,ir.new_date
+,ir.ownerid
+,ir.owneridname
+,users.new_Tmp_territoryName
+,users.new_Tmp_teamName
+,ir.new_plan_all_ref1idname
+,ir.new_plan_all_ref2idname
+,ir.new_plan_all_ref3idname
+,iri.New_itineraryresultid
+,iri.New_itineraryresultid,iri.new_seqnum,iri.new_accountidname,iri.new_address,new_time,iri.new_accountid
+,iri.new_n_plan_amount2,----ราคา
+iri.new_n_item2_id, ----item
+iri.new_n_brand2_idname,---name
+iri.new_n_item2_idname --message
+)data2
+INNER JOIN
+(
+select  new_itemid,new_itemcode,New_productbrand from filteredNew_item
+)item on data2.new_n_item2_id = item.new_itemid
+)sku1
+inner join (select accountid, accountnumber,name,address1_stateorprovince from FilteredAccount) acc
+on sku1.new_accountid = acc.accountid
+
+--*****************************************New SKU #2*******************************
+)all_data
+inner join
+(
+select x.* ,replace(y.internalemailaddress,'@biopharm.co.th','' ) as DSM_E
+from
+(
+select s.systemuserid,s.fullname,s.internalemailaddress ,s.new_tmp_territoryname
+,emp.sup_id,emp.sup_name,emp.new_location
+from FilteredSystemUser s 
+
+inner join 
+(
+select distinct
+              st.new_territoryidname as territory,
+              emp.new_salesrepid as salesrep_id,
+              emp.new_salesrep_name as salesrep_name,
+              emp.new_supid as sup_id,
+              emp.new_sup_name as sup_name,
+              emp.new_smid as sm_id,
+              emp.new_sm_name as sm_name,
+              emp.new_location,
+              emp.new_channel
+              from FilteredNew_employee_data emp,
+                      FilteredNew_salesterritory st
+              where new_company_id = 81
+              and st.new_userid = emp.new_salesrepid
+              and st.new_enddate is null
+              and st.new_territoryidname not like 'OLD%'
+              and st.new_territoryidname not like 'CC%'
+              union
+              select distinct
+              'DSM' as territory,
+              emp.new_supid as salesrep_id,
+              emp.new_sup_name as salesrep_name,
+              null as sup_id,
+              null as sup_name,
+              emp.new_smid as sm_id,
+              emp.new_sm_name as sm_name,
+              emp.new_location,
+              emp.new_channel
+              from FilteredNew_employee_data emp,
+                      FilteredNew_salesterritory st
+              where new_company_id = 81
+              and st.new_userid = emp.new_salesrepid
+              and st.new_enddate is null
+              and st.new_territoryidname not like 'OLD%'
+              and st.new_territoryidname not like 'CC%'
+              union
+              select distinct
+              'SM' as territory,
+              emp.new_smid as salesrep_id,
+              emp.new_sm_name as salesrep_name,
+              null as sup_id,
+              null as sup_name,
+              null as sm_id,
+              null as sm_name,
+              emp.new_location,
+              emp.new_channel
+              from FilteredNew_employee_data emp,
+                      FilteredNew_salesterritory st
+              where new_company_id = 81
+              and st.new_userid = emp.new_salesrepid
+              and st.new_enddate is null
+              and st.new_territoryidname not like 'OLD%'
+              and st.new_territoryidname not like 'CC%'
+
+) emp on s.systemuserid = emp.salesrep_id
+where s.new_tmp_territoryname is not null and emp.new_channel = 'OTC'
+)x
+inner join
+(select a.systemuserid,a.internalemailaddress
+ from FilteredSystemUser  a
+) y on x.sup_id = y.systemuserid
+) emp on all_data.ownerid = emp.systemuserid
+)Plan50_1
+)P50_1
+LEFT JOIN
+(
+select cc.New_customer_number+cc.New_item_code as code  ,cc.New_customer_number,cc.New_item_code 
+,cc.New_amount  as New_TotalExcludeVAT
+from  filteredNew_callcardreport2 cc 
+where 1=1
+and cc.New_year = YEAR(getdate())
+and cc.New_month  in (@Month) /*Month*/ 
+) TMP_TCA on P50_1.code = TMP_TCA.Code
+)P</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@employee">
+            <Value>=Parameters!employee.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Month">
+            <Value>=Parameters!Month.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <rd:UseGenericDesigner>true</rd:UseGenericDesigner>
+      </Query>
+    </DataSet>
+  </DataSets>
+  <Body>
+    <ReportItems>
+      <Tablix Name="Tablix2">
+        <TablixBody>
+          <TablixColumns>
+            <TablixColumn>
+              <Width>1in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.80208in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.33333in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>2.95833in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.46875in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.10144in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.1875in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>2.55208in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.57292in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>0.79167in</Width>
+            </TablixColumn>
+            <TablixColumn>
+              <Width>1.09375in</Width>
+            </TablixColumn>
+          </TablixColumns>
+          <TablixRows>
+            <TablixRow>
+              <Height>0.4375in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox10">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Date</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox2</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox14">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Sales Name</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox3</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox16">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Territory</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox5</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox19">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Account Number</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox7</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox21">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Account Name</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox9</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox23">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Province</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox11</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox46">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Plane Amount</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox45</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox26">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>TimeX12.</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox13</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox31">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Itemcode</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox17</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox35">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Item Name</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox29</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox77">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Brand</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox76</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox37">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>Stirike HIT</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox27</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox41">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value> Total Exclude VAT</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Color>White</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox25</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#7292cc</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <BackgroundColor>#4c68a2</BackgroundColor>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="date">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!date.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                                <Format>d</Format>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>date</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="owneridname1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!owneridname.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>owneridname1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Territory1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!Territory.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Territory1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="accountnumber1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!accountnumber.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>accountnumber1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="new_accountidname1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!new_accountidname.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>new_accountidname1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="address1_stateorprovince1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!address1_stateorprovince.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>address1_stateorprovince1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="new_e_plan_amount11">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!new_e_plan_amount1.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                                <Format>n2</Format>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>new_e_plan_amount11</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Times1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!Times.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Times1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="new_itemcode1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!new_itemcode.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>new_itemcode1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="new_e_item1_idname1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!new_e_item1_idname.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>new_e_item1_idname1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="new_productbrand1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!new_productbrand.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>new_productbrand1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Stiker_Hit">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!Stiker_Hit.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                                <Format>n0</Format>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Stiker_Hit</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="New_TotalExcludeVAT1">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Fields!New_TotalExcludeVAT.Value</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                                <Format>n2</Format>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>New_TotalExcludeVAT1</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox34">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>TOTAL</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <FontWeight>Bold</FontWeight>
+                                <Color>#4d4d4d</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style>
+                            <TextAlign>Center</TextAlign>
+                          </Style>
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox32</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#e5e5e5</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                    <ColSpan>6</ColSpan>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="new_e_plan_amount12">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Sum(Fields!new_e_plan_amount1.Value)</Value>
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                                <Format>n2</Format>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>new_e_plan_amount12</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox98">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value />
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox98</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                    <ColSpan>4</ColSpan>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox44">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Sum(Fields!Stiker_Hit.Value, "DataSet2")</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Format>n2</Format>
+                                <Color>#4d4d4d</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox42</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#e5e5e5</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox55">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=Sum(Fields!New_TotalExcludeVAT.Value, "DataSet2")</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Format>n2</Format>
+                                <Color>#4d4d4d</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox43</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#e5e5e5</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox104">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value />
+                              <Style>
+                                <FontSize>8pt</FontSize>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox104</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>LightGrey</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                    <ColSpan>12</ColSpan>
+                  </CellContents>
+                </TablixCell>
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell />
+                <TablixCell>
+                  <CellContents>
+                    <Textbox Name="Textbox75">
+                      <CanGrow>true</CanGrow>
+                      <KeepTogether>true</KeepTogether>
+                      <Paragraphs>
+                        <Paragraph>
+                          <TextRuns>
+                            <TextRun>
+                              <Value>=( Sum(Fields!New_TotalExcludeVAT.Value, "DataSet2") / Sum(Fields!new_e_plan_amount1.Value, "DataSet2") ) * 100</Value>
+                              <Style>
+                                <FontFamily>Tahoma</FontFamily>
+                                <FontSize>8pt</FontSize>
+                                <Format>n2</Format>
+                                <Color>#4d4d4d</Color>
+                              </Style>
+                            </TextRun>
+                          </TextRuns>
+                          <Style />
+                        </Paragraph>
+                      </Paragraphs>
+                      <rd:DefaultName>Textbox74</rd:DefaultName>
+                      <Style>
+                        <Border>
+                          <Color>#e5e5e5</Color>
+                          <Style>Solid</Style>
+                        </Border>
+                        <PaddingLeft>2pt</PaddingLeft>
+                        <PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop>
+                        <PaddingBottom>2pt</PaddingBottom>
+                      </Style>
+                    </Textbox>
+                  </CellContents>
+                </TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+        <TablixColumnHierarchy>
+          <TablixMembers>
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+            <TablixMember />
+          </TablixMembers>
+        </TablixColumnHierarchy>
+        <TablixRowHierarchy>
+          <TablixMembers>
+            <TablixMember>
+              <KeepWithGroup>After</KeepWithGroup>
+              <RepeatOnNewPage>true</RepeatOnNewPage>
+            </TablixMember>
+            <TablixMember>
+              <Group Name="Details1" />
+              <KeepTogether>true</KeepTogether>
+            </TablixMember>
+            <TablixMember>
+              <KeepWithGroup>Before</KeepWithGroup>
+            </TablixMember>
+            <TablixMember>
+              <KeepWithGroup>Before</KeepWithGroup>
+            </TablixMember>
+          </TablixMembers>
+        </TablixRowHierarchy>
+        <DataSetName>DataSet2</DataSetName>
+        <Height>1.1875in</Height>
+        <Width>18.86185in</Width>
+        <Style>
+          <Border>
+            <Style>None</Style>
+          </Border>
+        </Style>
+      </Tablix>
+    </ReportItems>
+    <Height>1.34375in</Height>
+    <Style>
+      <Border>
+        <Style>None</Style>
+      </Border>
+    </Style>
+  </Body>
+  <ReportParameters>
+    <ReportParameter Name="Year">
+      <DataType>String</DataType>
+      <Prompt>Year</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>2019</Value>
+            <Label>2019</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2020</Value>
+            <Label>2020</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2021</Value>
+            <Label>2021</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2022</Value>
+            <Label>2022</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Month">
+      <DataType>String</DataType>
+      <Prompt>Month</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>01</Value>
+            <Label>01-JAN</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>02</Value>
+            <Label>02-FEB</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>03</Value>
+            <Label>03-MAR</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>04</Value>
+            <Label>04-APR</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>05</Value>
+            <Label>05-MAY</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>06</Value>
+            <Label>06-JUN</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>07</Value>
+            <Label>07-JUL</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>08</Value>
+            <Label>08-AUG</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>09</Value>
+            <Label>09-SEP</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>10</Value>
+            <Label>10-OCT</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>11</Value>
+            <Label>11-NOV</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>12</Value>
+            <Label>12-DEC</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="SM">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>SM</DataSetName>
+          <ValueField>sm_name</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>SM</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>SM</DataSetName>
+          <ValueField>sm_id</ValueField>
+          <LabelField>sm_name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Sup">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Sup</DataSetName>
+          <ValueField>supname</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>Sup</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Sup</DataSetName>
+          <ValueField>supid</ValueField>
+          <LabelField>supname</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="employee">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>employee</DataSetName>
+          <ValueField>owneridname</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+      <Prompt>employee</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>employee</DataSetName>
+          <ValueField>ownerid</ValueField>
+          <LabelField>owneridname</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+  </ReportParameters>
+  <Width>18.86185in</Width>
+  <Page>
+    <PageHeader>
+      <Height>0.78125in</Height>
+      <PrintOnFirstPage>true</PrintOnFirstPage>
+      <PrintOnLastPage>true</PrintOnLastPage>
+      <ReportItems>
+        <Image Name="Image3">
+          <Source>Embedded</Source>
+          <Value>biologo2011</Value>
+          <Sizing>FitProportional</Sizing>
+          <Top>0.18076in</Top>
+          <Left>0.12803in</Left>
+          <Height>0.4461in</Height>
+          <Width>2.45833in</Width>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+          </Style>
+        </Image>
+        <Textbox Name="Textbox30">
+          <CanGrow>true</CanGrow>
+          <KeepTogether>true</KeepTogether>
+          <Paragraphs>
+            <Paragraph>
+              <TextRuns>
+                <TextRun>
+                  <Value>.::57.1.O_Stike  SKU- (No Invoice) Report::.</Value>
+                  <Style>
+                    <FontFamily>Cordia New</FontFamily>
+                    <FontSize>24pt</FontSize>
+                    <FontWeight>Bold</FontWeight>
+                    <Color>Gray</Color>
+                  </Style>
+                </TextRun>
+              </TextRuns>
+              <Style>
+                <TextAlign>Center</TextAlign>
+              </Style>
+            </Paragraph>
+          </Paragraphs>
+          <rd:DefaultName>Textbox29</rd:DefaultName>
+          <Top>6.48267mm</Top>
+          <Left>164.04167mm</Left>
+          <Height>10.7625mm</Height>
+          <Width>145.18677mm</Width>
+          <ZIndex>1</ZIndex>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+            <PaddingLeft>2pt</PaddingLeft>
+            <PaddingRight>2pt</PaddingRight>
+            <PaddingTop>2pt</PaddingTop>
+            <PaddingBottom>2pt</PaddingBottom>
+          </Style>
+        </Textbox>
+        <Textbox Name="Textbox33">
+          <CanGrow>true</CanGrow>
+          <KeepTogether>true</KeepTogether>
+          <Paragraphs>
+            <Paragraph>
+              <TextRuns>
+                <TextRun>
+                  <Value>="วันที่พิมพ์  " &amp; Format(Today(),"dd-MMM-yyyy") &amp; " " &amp; ": "&amp; TimeString() &amp; " P." &amp; Globals!PageNumber &amp;"/" &amp; Globals!TotalPages</Value>
+                  <Style>
+                    <FontFamily>Angsana New</FontFamily>
+                  </Style>
+                </TextRun>
+              </TextRuns>
+              <Style>
+                <TextAlign>Right</TextAlign>
+              </Style>
+            </Paragraph>
+          </Paragraphs>
+          <rd:DefaultName>Textbox26</rd:DefaultName>
+          <Top>0.25522in</Top>
+          <Left>14.85417in</Left>
+          <Height>0.25in</Height>
+          <Width>2.35417in</Width>
+          <ZIndex>2</ZIndex>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+            <PaddingLeft>2pt</PaddingLeft>
+            <PaddingRight>2pt</PaddingRight>
+            <PaddingTop>2pt</PaddingTop>
+            <PaddingBottom>2pt</PaddingBottom>
+          </Style>
+        </Textbox>
+      </ReportItems>
+      <Style>
+        <Border>
+          <Style>None</Style>
+        </Border>
+      </Style>
+    </PageHeader>
+    <PageFooter>
+      <Height>0.325in</Height>
+      <PrintOnFirstPage>true</PrintOnFirstPage>
+      <PrintOnLastPage>true</PrintOnLastPage>
+      <ReportItems>
+        <Textbox Name="ExecutionTime">
+          <CanGrow>true</CanGrow>
+          <KeepTogether>true</KeepTogether>
+          <Paragraphs>
+            <Paragraph>
+              <TextRuns>
+                <TextRun>
+                  <Value>=Globals!ExecutionTime</Value>
+                  <Style />
+                </TextRun>
+              </TextRuns>
+              <Style>
+                <TextAlign>Left</TextAlign>
+              </Style>
+            </Paragraph>
+          </Paragraphs>
+          <rd:DefaultName>ExecutionTime</rd:DefaultName>
+          <Top>0.06944in</Top>
+          <Height>0.25in</Height>
+          <Width>2in</Width>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+            <PaddingLeft>2pt</PaddingLeft>
+            <PaddingRight>2pt</PaddingRight>
+            <PaddingTop>2pt</PaddingTop>
+            <PaddingBottom>2pt</PaddingBottom>
+          </Style>
+        </Textbox>
+        <Textbox Name="Textbox1">
+          <CanGrow>true</CanGrow>
+          <KeepTogether>true</KeepTogether>
+          <Paragraphs>
+            <Paragraph>
+              <TextRuns>
+                <TextRun>
+                  <Value>Rev 3 : Dev 14Sep 2020</Value>
+                  <Style>
+                    <FontSize>8pt</FontSize>
+                  </Style>
+                </TextRun>
+              </TextRuns>
+              <Style>
+                <TextAlign>Right</TextAlign>
+              </Style>
+            </Paragraph>
+          </Paragraphs>
+          <rd:DefaultName>Textbox1</rd:DefaultName>
+          <Top>0.03833in</Top>
+          <Left>14.97917in</Left>
+          <Height>0.25in</Height>
+          <Width>2.35417in</Width>
+          <ZIndex>1</ZIndex>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+            <PaddingLeft>2pt</PaddingLeft>
+            <PaddingRight>2pt</PaddingRight>
+            <PaddingTop>2pt</PaddingTop>
+            <PaddingBottom>2pt</PaddingBottom>
+          </Style>
+        </Textbox>
+      </ReportItems>
+      <Style>
+        <Border>
+          <Style>None</Style>
+        </Border>
+      </Style>
+    </PageFooter>
+    <LeftMargin>1in</LeftMargin>
+    <RightMargin>1in</RightMargin>
+    <TopMargin>1in</TopMargin>
+    <BottomMargin>1in</BottomMargin>
+    <Style />
+  </Page>
+  <EmbeddedImages>
+    <EmbeddedImage Name="biologo2011">
+      <MIMEType>image/jpeg</MIMEType>
+      <ImageData>/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABbAaUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKTNAC0UmaM0ALRSUUALRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUh6UALRSZoFAC0UUUAFFFFABRRRQAUUUUAFFFBoAKKQHNFAC0UUUAJmlpKM0CFopKWgYUUUUAc14y1nW9
+E01LzR9Pju1QsbjeCdigdcAgn9a84/4XJrn/AD4af/3y/wD8VXtTqGQqwyCMEGvlW6jEN3NEOiOyj8DXq5dTpVk4zjseVmFSrSalCW56B/wuTXf+fDT/APvl/wD4qnx/GXWA2ZdOsnX0Xcp/Mk1l+D/h7J4s0ya+/tJbVI5jDt8neSQFOfvD+9+laGr/AAi1WxtZJ7G8ivhGu4x7DG7fQcgn8a6ZRwKm4NWZzRljXDnTbR2Hh/4q6Rq06W17E+nzucKZGDRn/gXGPxAHvXeZ4r5PIKsQwIIPII6GvdPhVr0ureHZLO5cvPYsIwxOSYyPlyfbBH0Arlx2BjSj7SnsdWCxsqkuSpuVvGnjfxH4X1Z0j0u2bTmIEFxIrHedoJBIbg5zwcdK5n/hcmuf8+Gn/wDfL/8AxVdz8UYEl8BXrsPmieJ1Pod6r/JjXgFb4GjRrUryjqjDG1q1GraMtGe++BfE+v8AiZpLi/02CDT9h8qeMEb3BAwMnkdecY4rtayPC8SQeFNIjjUBRZxH8SoJP51Y1O+NtEI4z++k4U4ztHc+leTWac3yqyPWopqC5ndiajq9vp8UjyOgEQ3SMzbVQdcse3H49PrXj/iL4vXlxK0GhLhFP/H1KpAJ/wBhPT/eJ+grG+IniKbVdUbRrZyLG0b98QeZpe+T7HI+uT6VxgG0AAYFejhMFFrnmctfEtPliac/iPW7iV5ZNVuwz53CKQxKf+ArgUln4g1mwkElrql5Gw7iZjXQeAPBDeLb2Sa5d4tOtyBIyfekbrtB+nU/417bZ+DfDllAIYdFsSo7yQiRj9WbJNa1sRRovk5bmdOjUqLmvY8n8P8Axf1exmSPV0S+teAXUBZV9wRwfx/OvY9F13T/ABBp6XunXCyxNwR0ZD6MOxrlvEPwr0HV4neyi/s665KvCP3ZPunTH0xXl1rNr3wy8UATRkKT+8QH93cx56g/yPUHr3Fczp0cQr0tJdjdTqUn7+qPovNeU+If
+iN4p8P6pJa3WkWcSFmMLOrHegPByGx0xXpel6lbavplvqFm++3nQOh7/AEPuDwa8++M1uG0XTrnbzHcmPd6blJx/47WGDUXWUKkb3Hi3JUnODtYwP+Fya5/z4af/AN8v/wDFUf8AC5Nc/wCfDT/++X/+Krz2CIzTxxAgF2Cgntk4r1EfBaUxZOupvx0+y8fnv/pXrVqWDo251ueVSq4urfkd7DLX4z3auPtekQuvfypSpH5g13vhvxto/icFLSVo7kDLW8ww+PUdiPpXjfiT4faz4agN1KI7mzB5mhydnpuB5H6j3rmrW6nsrqK6tpWiniYMjocFTUSwOHrx5qLLjjcRRly1T3Px14r8QeGJo5rHTYJtNaMb55ATtkJIwcMMDG3k+tcZ/wALk1z/AJ8NP/75f/4qu3utRTxT8Kby+dVDvYyPIo6CRAc4/FeK8CqMDQpVIuNSOqLxterTknCWjPcPBXjPxJ4o1BTNpdsmmLuEtxGGG1sZAGW55x0B616DmuV+HECweA9NAABcO7H1JdjXVV5eIcfaNRVkj08OpezTk7tmR4lvNXsNHe40WyS8u1Yfun7r3I5GTXljfGLXkYq2n2AZTggo/B/76r2qvmzxrALbxpq8YAANyz4/3vm/rXZl1OnVbhONzkzCdSmlOErHZad8UvFGrXqWdjpFlPcP0RVf9TuwB7mvX4WdokMihXKjcB2PevHPgzAjazqU5+8luqD6Fsn/ANBFey9Kxx8YQq8kFaxrgXOdPnm73FpCQBkniiuP+JGv/wBieFZo4n23V5+4jx1AI+Y/ln8SK5adN1JqC6nTUqKnByfQ5Kz+JFxN8RCjXP8AxJZZfs6JgYA+6Hz7sM/Q166K+T6+i/Aev/8ACQeFra4kbdcw/uJ/Usvf8Rg/jXpZhhVTjGUNtmefgMU6knGR01QXr3EdjcPaRrJcrGxiRjgM+OAfxqeivKPUZ41e/FfxLp15JaXmlWUM8Zw8bo4I/wDHv85q
+D/hcmuf8+Gn/APfL/wDxVR/GCBI/FltIoAaSzUt7kMwz+Vcp4a0M+Itet9LWcQebuPmFN2MKT0yPSvoaVDDyoqrKNtD5+rXxEarpxkdePjJrgIzYaeR6bX/+KrQs/jRIGAvdHUju0M2P0I/rTZfgtOqZh1yN39Htio/MMa4vxJ4N1fwuVa9iV7djtW4iO5CfQ9wfr6cZqIQwNV8sdy51MbSXNI9z8PeMtH8TKRYzkTqMtbyjbIB647/gTW8K+VrG+udNvoby0lMVxC4dHHYj+Y9q+m9F1FdX0az1BAALiFZCB/CSOR+ByK4MbhPYNOOzO/BYt101LdF+g9KKoa3fDTNDvr4kAwQPIM+oBI/WuGKu7I7ZPlVzyGw8ZSWvxUurqS4Y2FxcNbMC3yhM7VYemNqnPpmvbBXyeSWOTyTyTX0R8P8AX/7f8K28sj7rm3/cT+7L0P4jB+ua9XMcMoRjOPozy8vxHNKUJeqOpoooNeSeqIeBmvFE8YyX/wAWba7SZjY/aBaxKGO0ocoG/EndXe/EfXv7E8KTrE+25vP3EWDyAR8x/AZ59SK+fo3aORZEOGU7gR2Netl+G54SnLrojysfieScYR6as+rxS1U028XUNLtLxPu3EKSj/gQB/rVuvJas7M9RO6uFFFFAxD0NfK+of8hK6/67P/M19UHoa+V9Q/5CV1/12f8Ama9fKPikeTmvwxPZfg5/yKV3/wBfz/8AouOvQJZI4YmkldURRlmY4AHcmvm7RfGGt+H7N7XTLtYYXkMjKYlb5iAM5IPYCodW8Ua5ri7NR1KaaPr5fCof+ArgfpVVcuqVa0p3smyKWYQp0VG2qRDr13BfeIdSu7f/AFM1zJIhxjILEg16V8FYnEeszFT5bNCoPqQHJ/mPzry2wghur2GC4u47SJ2w0zqWCj6AE/57da+kPC+lado+g29rpciy2+N/nKQfNJ6tkdf8MVrmNRQoqkjPL6bnWdQyvib/AMk/1L6xf+jU
+r57r6E+Jv/JP9S/7Zf8Ao1K+e6Mq/hP1Fmf8Veh9PeHP+RY0n/rzh/8AQBXOavqRH9oXy4YQxuU5yMKDj8D1/Gt7RpTB4N0+UDJTT42/KMGuPkQ3Ok3VuvWSB0GPdSP614z/AIj9T2o/w16HkMdozReY2S7ksxPeopLX2rporPNpEQP4RVeWy9q+ii1ZWPCc7ydz1f4VxwR+BrYRffMshl/3t3/xO2u2rxXwV4nbwxdSQXKs+nzkFgvJjb+8B9Oo/wAOfWLbxBpF3CJYdStWQ+soBH1B5H414eKozjUb6M9jD1oygl2NFwGQg5wR2ODXmGmXFt8S/DF7o2oMv9q6e5VLjueoSTj1xhh7dsjGh41+Idnp+nTWekXKXGoSqUEkTZWEH+LcOCfQDv19/NvhjcTWfxCso0Y7LqKWKQeoCFx+qiro0JRpOq9GthVK0XNQ3O0+EWo3Nndap4YvQVltnMqIf4SDtcfTO0/ia0vjH/yKVp/1/J/6LkqO4sv7P+M2lXkIKpqVvKsnuyIc/oEqT4x/8ilaf9fyf+i5KuDUsVCa62ZnWusNOPY8a0//AJCVr/12T+Yr6oHSvlfT/wDkJWv/AF2T+Yr268+K+hWN1PazWuo+dA7RuoiX7wOD/FXVmVKdSUeRXOPLqsKcZczsdbq8cMmi3yT4MLQOH3dNu05r5br0DxX8ULrXbGTT7C2NnayjbI7NmSRfTjhQe/X61wcEEtzcRwQRtJLIwREUZLMeABW2X0J0IN1NLmOPrwrTShrY9d8IA/8ACm9YyDgw3WPpsNePV9BnR/7A+Fl5ppILxabOZCOhcozN+pNfPlGAkpyqSXcMdFwjTi+x9G+AP+RG0n/rj/7Ma6SvnjTfiH4h0nTobG0nhWCFdqBoQSB9at/8LU8U/wDPzB/34WuKpltaU3JW1Z2U8xoxgk7nvlfOfj//AJHrVv8ArqP/AEEVof8AC1PFP/PzB/34WuV1PUbjVtRnv7tlaeY7nKrg
+E4x0/CurA4OpQm5TObG4unWgoxPRvgv/AMhDVv8ArlH/ADNew1498F/+Qhq3/XKP+Zr2CvOzH/eGehl/8BBXz/8AEnXv7a8VyxRNm2sswR47sD8x/Pj6KK9g8a68PD3hi6u1YC4ceVB/10bp+Qyfwr5vJJJJJJPPNdWV0dXVZy5nW0VJExs7gWK3xiP2ZpTEJO28AEj8iK7T4Wa//ZXiX7BM+Le/Aj5PAkH3fz5H4it29XwyfhiuiR6tZNewxidcSjJnHJAPvkr9CK8qjkeGVJY2KOhDKwOCCOhrvT+tU5wkrf1ocLX1apGUXc+r6KxvC+tp4g8PWmorgO6ASqP4XHDD8/0IrZr5qUXFuL6H0cZKSTR4n8ZP+Rnsv+vMf+htWR8Mf+R9sP8Adl/9FtWv8ZP+Rnsv+vMf+htXP+Ab2PTvF1veypI8cEUruI13NgRtnAr6Cmm8DZdjwajtjbvufRdYHjaK3m8F6utxjYLZ2XP98DK/+PAVht8W/DSqSBeMR2EI5/M1wPjP4iXHiWA2FrA1rYbgWDHLy45GccAdDjnmvMw+CrOorqx6WIxlFU2r3OHr6J+HQYeA9L3Zzsbr6b2xXgmj6Tda3qkGn2cZeWVgM44Ud2PsK+mdMsYtL0y1sYf9XbxLGpPfAxmu3Npx5Yw6nHlcHzOfQt1xHxV1D7H4KlhB+a7mSEeuM7j/AOg4/Gu3rx/4zX+690zTwfuRtOw9dxwP/QW/OvOwUOevFHoYyfJRkzy2u5+Fuv8A9leJxZSti3vwIjnoJB9w/qR/wKsDwvoEniTVmsY22sIJJAfQhflz7bitZH7y3m/ijljb6FWB/nmvoasY1YypPc+fpOVKUaiPq7NHasbwrra+IPDlpqAI8x02zAdnHDD8+R7GovGWvDw94Yur0MBOR5cA9ZG4H5cn8K+X9lLn9n12PpvaR5OfoeP/ABL17+2fFUkETZtrHMCYPBb+M/nx/wABFcZUsUUt3cRwxK0k0rhV
+XqWYnAH4k1qeKNCbw5rj6czb9kcbbv7xKAtj8d1fU0lCko0l2PmarlVcqrPaPhjqH27wRaqTl7Zngb8Dkf8AjpWuxryX4Mahzqmms39ydF/8dY/+g16yK+cxkOSvJH0OEnz0YsWiiiuY6RD0NfK+of8AISuv+uz/AMzX1Qehr5X1D/kJXX/XZ/5mvXyj4pHkZr8MTvPAHgPSvFGiT319NdpJHctCFhdQpAVTzlSc/Me9dDffBvTHiP2HUruKTt5wWRf0CmrHwc/5FK7/AOv5/wD0XHXoZrHE4qtCvJRlszbDYWjOjFuOrPmPxB4ev/DWpGyv0XcRuSRDlZF9RXV/C7xRPpuuR6RNIWsrw7UUniOTsR9en5VtfGjyvK0jOPO3S4/3flz+uK838Plx4k0sxZ8wXkO3HrvGK9KL+s4W8zzpL6vibQPcvib/AMk/1P8A7Zf+jUr57r6D+Jn/ACT/AFL/ALZf+jUr58rLKv4UvU0zP+KvQ+mtDiE/hDToj0ewjU/igrirGYrweCODXc+HP+RY0n/rzh/9AFcb4htG0vXJGA/c3BMqn3PUfn/SvEn8TPbh8C9DIm05IbmSIDCMTJH9D1H4H+lU5tP9q3wUuogjHDDlW7g1BJG8RxIMejdj+P8ASvWwuJUo8r3R4mMw86cnOOzOYlsT6VRlssHpXYPCj9RVSawUgkdK7eY41UscZLZ+1bvw80t5vGS3oGIrCJmLY43OCoH5En8Knj0q41GbyLGMOc4aU/cT6nufYV3OjaZbaBpwtbclmY75ZT1kbuT/AIVxYzERUHBPVnp4OlKUud7Fqe2+1+MNDmAJNqLiQn0BQL/NhWR8Y/8AkUrT/r+T/wBFyV1mjQb5HvHHJXy4/YZyT+Jx/wB81yfxj/5FK0/6/k/9FyVw4V3rwOzFL9xNnjWn/wDIStf+uyf+hCvUfHXw71LVvEDajpEcTJOgMqtIFIccZ+hAH45ry7T/APkJWv8A12T+Yr6oA4r0
+swryo1IyhvqedgKEa1OUZHhdr8I/Ec7Dzns7de5eUsfwwDXo3hP4f6b4YcXRY3d/jHnuMBPXaO315NddS15tbG1qq5ZPQ9GlgqNJ3S1MjxUMeENa/wCvGf8A9AavmSvpvxV/yKGtf9eM/wD6Aa+ZK9HKfgkefmvxx9D1Lw38LtO1vw9ZalNf3Uck6bmVAuByR6Vq/wDCmtK/6Cd7+Sf4V03gD/kRtK/64/8AsxrpK4KuMrqbSl1O6lhKLgm4nmv/AAprSv8AoJ3v5J/hXlviXSo9E8Q3umwyPJHA4VWfGTwD2+tfTtfOPj//AJHrVv8ArqP/AEEV25diKtSo1N30OPMMPTp004Kx1vwX/wCQhq3/AFyj/ma9gNeP/Bf/AJCGrf8AXKP+Zr0zxHrMeg6Bd6lJgmFCUU/xOeFH5kVyY+LliWl5HXgZKOHTZ5F8V9e/tHxAumQvmCxGGweDIev5DA/OuHtrK6vN32W1mn2Y3eVGWxn1x06Go55pLieSeZy8sjF3Y9SSck1738M9D/sjwpFLKuLi9PnvkchT90flz+Jr1KlRYKhFLVnl06bxlZt7Hh/9i6r/ANAy9/8AAdv8Kr3NpdWbKLm3mhZhlRIhUn6Zr6qwK4P4q6F/aXhkX8SZnsG8w4HJjPDflwfwNc9HNHOajKNkzetlqhByjK9jlfhDr32XVLjRZn/dXQ8yEE8CQDkD6r/6DXs1fK1leTaffQXlu22aBxIh9wc19OaPqcOs6Ra6jB/q7iMOBnO09wfcHI/CufM6HLUVRdfzOjLa3ND2b6HkPxk/5Gey/wCvMf8AobVj/DIA+PLEHptl/wDQGrY+Mn/Iz2X/AF5j/wBDasj4Y/8AI+2H+7L/AOgNXbD/AHH5HFU/335jviH4V/4RzXDLbJt0+6JeHHSM/wASfh1Ht9DXL2C2j38C30kkdozgSvGMsq+oFfSXiTQrfxHok+nT8FxujfHKOOjf57Eivm3ULG40y/nsruMxzwOU
+dT6j09R3qsBiPbU+RvVCx2H9lU50tGfRnhnw1o2gWSnSog3nKGNwzbnlHUHd6fTityvJ/hV4v4Hh6+k9TZux/NP6j8R6CvWK8XE0506jU9T2cNUhOmnAK+d/iJf/ANoeONQYHKQsIFz22jB/8ezX0HdXCWlrNcSnEcSF2PoAMmvlm6uHu7ye5lOZJpGkY56kkk/zruyqF5ufY4s0naCh3PS/gxZbr/VL4j/VxJCpP+0ST/6CKyfinoH9leJft8SYt7/MnHaQfe/PIP4n0ruvhJZfZvBxuCObq4eQH2GF/mprZ8caB/wkPha5tkQNcx/voPXevb8RkfjSeJ5Ma5dNgWG58Go9dzzv4Ra99k1afRpnxFdjzIge0ijn81/9BFQ/FnXvt+ux6VC2YbEZfB4MjDn8hj8zXBWd3Np99Bd27bZoJBIh9CDkUk0017eSTSFpJ55CzHqWYnP8zXo/VY/WPbdDz/rMvYexO7+FHh/+0defVJo829iPkz0Mp6fkMn64q18ZbIx63p96B8s0BiP1Rs/+zivSPB2gr4d8NWtiQBOR5k59ZG6/l0/Cua+MFkJ/C9tdgZa3uRk+isCD+u2vOhiefGqXTY9CWG5MG49dzgfhlqH2DxxaKWwlyjwN75GR+qivoEV8sadePp2p2l6n37eZJR/wEg/0r6likWaJJEYMrKGUjuDRmsLVFLuPK53g49h9FFFeUeoIehr5X1D/AJCV1/12f+Zr6oPIrw+6+FPiSa8nlQ2e15GYZmPQn6V6eWVYU5S53Y8zMaU6ijyK5S8EePT4Tt7m1ls2uYJnEg2vtKtjB7c5AH5V0l38aCY2Fno2HI4aabgfUAc/nWF/wqTxN/05f9/j/hUkXwh8RyE75rCMDu0rHP5Ka7KiwM5c8mr+pyQeNhHkinY5PXNev/EWoG91CUPIRtVVGFRfQD05rofhp4em1fxPDeMjC0sWErvjguPuqD65wfoK6jS/g3GrrJqupmQZ5it0xn/g
+R/wr0rTdMstIsY7Kwt0ggToq/wAye59zWWJx9NU/Z0TXD4GpKp7Sqc78Tf8Akn+p/WL/ANGpXz3X0n4z0i513wpeabZ7PPm2bd5wOHVjz9Aa8n/4VL4l/wCnL/v8f8KWW16dOm1N21DMKFSpUTgr6HsPhiRZfCukOhBU2cXI/wBwVJrWkxavYGBiFkX5on/un/CuZ8BaJ4m0APZatPbvpyRnyURtzI5IPXA46129eXWio1HZ3R6lGTcFdWZ5PKlxpl01vcIUdDyP6j2q9Beqy4OCD2Nd7qWk2eqwiO6jyR9114Zfoa5C98F31uxaylSdOyk7G/w/Ws0zSxWEVnJ1ix7IxX+Rp62Wng5MAf2kdnH5EmqzaPrcDbWsZj/u4b+RqxBoutTdLNkHq7Bf0JzWntJ7XM/ZU73sXPtSIgRAFUdABxVrTraXU5sjcIFPzyf0HvU9h4UwQ9/OH/6ZxZA/E9f5V0kcUcMaxxoEReAoGAKzbNECIsaKiKFVRgAdq83+MtwBoOn22Rl7rzMf7qkf+zV6Ua8k8UeCfGfiXVHnuZ7N4I3YW6eZtCIT6AdemTXVguVVlKbskcuM5nScYK9zzLT/APkJWv8A12T+Yr6oHQV4fafCnxJDeQSv9j2pIrHEx6A/SvcBXRmVWFSUeR3OfLqU6alzqwtFFFeYemZHir/kUda/68Z//QDXzJivqLXLSXUNA1Gyg2+dcWskSbjgbmUgZ/OvF/8AhUviU/8APl/3+P8AhXr5bWp04yU3Y8jMaNSpKLgrnp3w6nE3gPTCCDtV0OO2HYV1NedeBfDXizw1erbXU9qdJYs0kSvuIbHBXjjnFei15+JjFVXyu6Z6GHk3TXMrNBXzb43mE/jXV3BBAuGTj/Z+X+le9+JI9al0hk0GWGO9LgB5egXvjg815FJ8KPFMsjSSNZs7kszGc5JPU9K7MtlTptznJI48wjUqJQhG5p/BjjUNW/65R/zNHxf1/wA69ttDhf5IMTT4
+P8ZHyj8Bk/8AAhXQfDrwdqnhi6v5dQ8jE6IqeW+eQT14965fWfhl4n1PWr29L2jCed3BaUg4J47emK2U6MsW6kpaLYylCtHCqnGOrOR8KaN/b3iax09h+6eTdLjj5F5b6cDH1NfSyKqKFUAKowAOgryDw38P/Fnh/Xbe/heyUBgsv7zdlCRuHT0r2AVz5jVVSacXdG+XUnTg+ZWYtRzwR3NvJBKgeORSjqehBGCKkpDnHFeceg9j5f17Sn0TXb3TXJP2eUqpI5Zeqn8QQa9K+D+vkx3WhTOMrme3z6dGX+R/E1naz8OvF+t6tcahdvYtNKRkiTAwBgcY9AKk8O/DjxNo3iLT9QL2ipDMpkKyknZnDDp/dJr3q1WjVw/LKSvb8Tw6NKtSr80Yu1/wK3xj/wCRnsv+vMf+htWH8OZlg8e6WzNhWZ0+pKMB+uK9A+IXgjV/E2tW13p/2fyo7cRt5khU53MfT3rlYPhZ4rtbiO4gktI5YmDo6zkFSDkHpSo1qLwqpykk7DrUaqxLqRi2rnuVeafFXwn9ssv7es4/9It1xcKo+/GP4vqP5fSu50FNVTRrdNaeN9QAbzWixtPzHHTHbFaLoroVZQykYIIyCK8ilVdCpzR6HrVaarU+WXU+U4ZZIJo5oXaOWNg6OpwVI5BBr6F8D+LIvFGiq7sq38ACXEfTnswHof55FcNr/wAI706k8uhywG0kJYRTOVaP2Bwcj9fr1qtpfw68Z6LfJe2FxaQTpxuExwR3BGMEV62Knh8TTT5kn/Wh5WGhXw1S3LdHoXxDv/7P8EakwOHmQQKPXecH9Ca+dq998feHdY8S6JZWVkbcMkoln3uVGQpAxx7mvPf+FS+Jv+nL/v8AH/Cll9WlSpPmkk2x4+lVq1Fyx0PXvCtgNM8LaZaYwyW6lh/tEZb9Sa2KwfCNrrlno32fX5oprmN9sbRnP7sAYycDJzmt6vHq/G9bnrUvgWlj5/8AiT4f/sPxRLLEm20v
+czR46Bv41/M5+hFTfDDQP7X8TrdzITbWGJT6GT+Afnk/8Br1Lx34XPijQfIgCC9hcPAzHA9GBPoR/IVL4J8Nf8Ix4eS0kKNdSMZbhl5BY8YHsAAPz9a9N47/AGXlv72x5qwP+081vd3OjrB8a2P9o+DdVtx97yDIo9SnzAfmtb1c74yste1DSBa6DNDFJKSk5kOMxkEEA4ODXm0f4id7HpVvgelz5wr6O8CakuqeDNNlBBeOIQPz3T5efrgH8a8s/wCFSeJf+nL/AL/H/Cuo8FeE/FvhnVEWSe2GmSNm4iWTdnjggY4PSvYx86Nan7sldHkYKFWjU96Lsz07NFGKK8M9sXFFFFABRiiigBMUYpaKADFJilooAKKKKACjFFFABRRRQAUUUUAFFFFABRRRQAUUUUAGKMUUUAFGKKKACkxS0UAJilxRRQAYoxRRQAUUUUAGKMUUUAGKMUUUAJijFLRQAYooooAMUYoooAMUUUUAFGKKKACiiigAxRiiigBMUUtFAH//2Q==</ImageData>
+    </EmbeddedImage>
+  </EmbeddedImages>
+  <rd:ReportID>5801efe8-736e-41ba-8c48-ee4d146458f7</rd:ReportID>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+</Report>
